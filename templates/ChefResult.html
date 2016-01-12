@@ -1,0 +1,39 @@
+{% extends base.html %}
+
+{% block content %}
+<ul class="nav nav-tabs">
+  <li class="active"><a href="#home" data-toggle="tab" aria-expanded="true">Practice Problems</a></li>
+  <li class=""><a href="#profile" data-toggle="tab" aria-expanded="false">Challenge Problems</a></li>
+</ul>
+<div id="myTabContent" class="tab-content">
+  	<div class="tab-pane fade active in" id="home">
+		{% for prob in p_prob %}
+		{% set p_link = "https://www.codechef.com/problems/"+prob %}
+    		<p>Raw <a href={{ p_link }}>{{ prob }}</a></p>
+		{% end %}
+  	</div>
+  	<div class="tab-pane fade" id="profile">
+    		<p><div class="page-header" id="banner">
+        		<div class="row5">
+				{% for month in c_prob.keys() %}
+				<h3><a href='#' class="btn btn-warning">{{ month }}</a></h3>
+				<div style="margin-left:2em">
+					{% set key = c_prob[month] %}
+					{% for prob in key.keys() %}
+					{% set c_link = "https://www.codechef.com/"+month+"/problems/"+prob %}
+                			<p>Done <a href={{ c_link }}>{{ prob }}</a> and got {{ key[prob] }} points</p>
+				{% end %}
+            			</div>
+				{% end %}
+			</div>
+		</div></p>
+  	</div>
+</div>
+{% end %}
+{% block script %}
+$(document).ready(function() {
+		$('div[class="row5"]').accordion({collapsible: true, active: false, heightStyle: "content"});
+
+
+	});
+{% end %}

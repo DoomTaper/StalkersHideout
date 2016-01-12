@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link type= text/css rel="stylesheet" href={{ static_url("css/bootstrap.css") }}>
+		<title> {% block title %}{% end %} </title>
+		<script type='text/javascript' src={{ static_url("js/jquery-2.1.4.min.js") }}></script>
+		<script type='text/javascript' src={{ static_url("js/jquery-ui/jquery-ui-1.11.3.js") }}></script>
+		<script type='text/javascript' src={{ static_url("js/bootstrap.min.js") }}></script>
+		{% block scripts %} {% end %}
+	</head>
+	<body>
+		<!-- Navigation bar -->
+		<div class="navbar navbar-default navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-collapse collapse" id="navbar-main">
+					<ul class="nav navbar-nav">
+						<li><a href="/">Home</a></li>
+						<li class="dropdown">
+							<a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Sites <span class="caret"></span></a>
+							<ul class="dropdown-menu" aria-labelledby="themes">
+                						<li><a href="/Codeforces">Codeforces</a></li>
+								<li><a href="/CodeChef">CodeChef</a></li>
+								<li><a href="/hackerrank">Hackerrank</a></li>
+							</ul>
+						</li> 
+						<li><a href='#'>Database</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div class="container">
+			{% block content %}{% end %}
+		</div>
+	</body>
+	<script>{% block script %}{% end %}</script>
+</html>
