@@ -3,7 +3,7 @@ import tornado.gen
 import urllib2
 import bs4
 import json
-import time
+#import time
 import socks, socket
 
 
@@ -32,7 +32,7 @@ class Query(tornado.web.RequestHandler):
 	def get(self, path):
 		h_name = self.get_argument('name')
 		if path=='1':
-			query = ChefQuery('ban_kar_diya')
+			query = ChefQuery(h_name)
 			c_prob, p_prob = yield query.do_everything()
 			
 			self.render('ChefResult.html', 
@@ -86,8 +86,24 @@ class ChefQuery:
                     			self.chal_prob[ link_data[1] ] = { link_data[3].split(',')[0]:0 }
                 		else:
                     			self.chal_prob[link_data[1] ][ link_data[3].split(',')[0] ] = 0
-		time.sleep(2)
+		for link in self.link_list:
+            		if len( link.split('/') )  == 4 :
+                		url = 'https://www.codechef.com' + link
+				print url
+				link_file = urllib2.urlopen(url)
+                		soup = bs4.BeautifulSoup( link_file.read() )
+                		a = soup.findAll('td',{'class':'centered','width':'51'})
+                		max_points = 0
+                		for i in a:
+                    			points= i.findAll(text=True)
+                    			if len(points) == 2 :
+                        			if points[0] > max_points :
+                           				max_points = points[0]
+                    			if points==[] :
+                        			max_points = 100
+                		link_data = link.split('/')
+                		self.chal_prob[ link_data[1] ][ link_data[3].split(',')[0] ] = max_points
+		#time.sleep(2)
 		print('prac_problems' + str(self.practice_prob))
 		print('chal_problems' + str(self.chal_prob))
-        	print 'two done'
 		return self.chal_prob, self.practice_prob
