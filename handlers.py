@@ -24,7 +24,7 @@ class HackerRank(tornado.web.RequestHandler):
 
 class CodeForces(tornado.web.RequestHandler):
 	def get(self):
-		self.render('UnderDevelopment.html'
+		self.render('CodeForces.html'
 		)
 
 class Query(tornado.web.RequestHandler):
@@ -38,8 +38,18 @@ class Query(tornado.web.RequestHandler):
 			self.render('ChefResult.html', 
 					p_prob=p_prob,
 					c_prob=c_prob )
-			#self.write("<h2>"+str(response)+"</h2>")
-			#self.finish()
+		elif path=='2':
+			query = ForcesQuery(h_name)
+			prob = yield query.do_everything()
+			c_prob = []
+			p_prob = []
+			for key in prob.keys():
+				if prob[key]["prac/cont"]=='CONTESTANT':
+					c_prob.append(prob[key])
+				else:
+					p_prob.append(prob[key])
+			self.render('ForcesResult.html', 						p_prob=p_prob, 
+					c_prob=c_prob)
 		else:
 			raise tornado.web.HTTPError(403)
 			
@@ -107,3 +117,82 @@ class ChefQuery:
 		print('prac_problems' + str(self.practice_prob))
 		print('chal_problems' + str(self.chal_prob))
 		return self.chal_prob, self.practice_prob
+
+class ForcesQuery:
+    def __init__(self,handle_name):
+        self.handle_name = handle_name
+        self.rating_url = 'http://codeforces.com/api/user.rating?handle=%s'%self.handle_name
+        self.prob_url = 'http://codeforces.com/api/user.status?handle=%s'%self.handle_name
+        self.all_contest_url = 'http://codeforces.com/api/contest.list'
+        
+        self.chall_prob = {}        #a dictionary of { (contest_id,index) : list }
+                                    #each element of the list contains a list containing prob. name,maxmum points obtainable,points obtained ,practice/contest
+                                    #of solved problems
+        self.contest_rating = []    #contains a list of tuple of contest_id,contest name and
+                                    #its rating in that contest.
+        self.contest_timing = {}
+        self.list_of_contest = []
+        
+    @tornado.gen.coroutine 
+    def do_everything(self):
+	socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1",9050, True)
+	socket.socket = socks.socksocket
+        auth = urllib2.HTTPBasicAuthHandler()
+        opener = urllib2.build_opener(auth,urllib2.HTTPHandler )
+        urllib2.install_opener(opener)
+  
+        link_file = urllib2.urlopen(self.prob_url)
+        data = link_file.read()
+        data = json.loads(data)
+        if data['status'] != "OK" :
+            print data['comment']
+        else:
+            print 'OK'
+            for i in data['result']:
+                if i['verdict'] == "OK" or i['verdict'] == "PARTIAL" :
+                    if i['contestId'] not in self.list_of_contest and i['author']['participantType'] == "CONTESTANT" :
+                        self.list_of_contest.append(i['contestId'])
+                    try:
+                        i['problem']['points']
+                    except KeyError:
+                        self.chall_prob[ (i['contestId'],i['problem']['index']) ] =  { 'name' : i['problem']['name'],'prac/cont': i['author']['participantType'] } 
+                    else:
+                        self.chall_prob[ (i['contestId'],i['problem']['index']) ] =  { 'name' : i['problem']['name'],'total_points' : i['problem']['points'],'prac/cont': i['author']['participantType'] }
+                            
+        for i in self.list_of_contest:           # i is a contest_id
+            url = 'http://codeforces.com/api/contest.standings?contestId=%d&handles=%s'%(i,self.handle_name)
+            link_file = urllib2.urlopen(url)
+            data = link_file.read()
+            data = json.loads(data)
+            number_of_ques = len(data['result']['rows'][0]['problemResults'])
+            for j in range( number_of_ques ):
+                try :
+                    self.chall_prob[ (i,data['result']['problems'][j]['index']) ]
+                except KeyError :
+                    continue
+                else:
+                    self.chall_prob[ (i,data['result']['problems'][j]['index']) ]['actual_points'] = data['result']['rows'][0]['problemResults'][j]['points']
+        print 'second done'
+	
+	#gives rating of all participated contests
+        link_file = urllib2.urlopen(self.rating_url)
+        data = link_file.read()
+        data = json.loads(data)
+        if data['status'] != 'OK':
+            print data['comment']
+        else:
+            for i in data['result']:
+                self.contest_rating.append((i['contestId'],i['contestName'],i['newRating']))
+	self.chall_prob = {str(key):value for key,value in self.chall_prob.items() }
+        print 'last done'
+	return self.chall_prob
+  
+    def contest_timing_(self):                                   #may be useful , but not used now.
+        link_file = self.get_link_fileptr( self.all_contest_url )
+        data = link_file.read()
+        data = json.loads(data)
+        if data['status'] != 'OK' :
+            print data['comment']      #change has to be made here  i think its comment
+        else:
+            for i in data['result']:
+                self.contest_timing[ i['id'] ] = i['startTimeSeconds'] + i['durationSeconds']  #has info abount when the contest ended.
