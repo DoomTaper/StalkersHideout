@@ -3,7 +3,6 @@ import tornado.gen
 import urllib2
 import bs4
 import json
-#import time
 import socks, socket
 
 
@@ -54,14 +53,12 @@ class Query(tornado.web.RequestHandler):
 			raise tornado.web.HTTPError(403)
 			
 class ChefQuery:
-	#@classmethod
     	def __init__(self,handle_name):
         	self.handle_name = handle_name
         	self.link_list = [] 
         	self.practice_prob = []
         	self.chal_prob = {}    #dictionary of { contest name:{problems:point} }
         
-	#@classmethod
         @tornado.gen.coroutine
     	def do_everything(self):
 		## to connect to tor
@@ -74,15 +71,11 @@ class ChefQuery:
         	opener = urllib2.build_opener(auth,urllib2.HTTPHandler )
         	urllib2.install_opener(opener)
         	link_file = urllib2.urlopen(url)
-		#print(link_file.read())
-        	#file_ptr = self.get_link_fileptr(url)
         	soup = bs4.BeautifulSoup( link_file.read() )
         	for link in soup.find_all('a'):
             		link_data = link.get('href')   #data is like written below
-			#print(link_data)
             		if '/status/' in link_data:
 	        		self.link_list.append(link_data)
-		#print self.link_list
 ###############################################################
         	link_list = self.link_list
         	for link_data in link_list:
@@ -113,7 +106,6 @@ class ChefQuery:
                         			max_points = 100
                 		link_data = link.split('/')
                 		self.chal_prob[ link_data[1] ][ link_data[3].split(',')[0] ] = max_points
-		#time.sleep(2)
 		print('prac_problems' + str(self.practice_prob))
 		print('chal_problems' + str(self.chal_prob))
 		return self.chal_prob, self.practice_prob
