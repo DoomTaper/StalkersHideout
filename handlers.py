@@ -5,6 +5,28 @@ import bs4
 import json
 import socks, socket
 
+class BaseHandler(tornado.web.RequestHandler):
+    @property
+    def db(self):
+        return self.application.db
+
+class DBHandler(BaseHandler):
+    def get(self):
+        self.render('UnderDevelopment.html'
+        )
+
+class DBQuery(BaseHandler):
+    @tornado.gen.coroutine
+    def post(self, query):
+        column_name = self.get_argument("referrer")
+        #column_name = "users"
+        if query=='add':
+            value = self.get_argument("name")
+            query = "INSERT INTO "+column_name+" VALUES ('"+str(value)+"')"
+            cursor = yield self.db.execute(query)
+        #end = "Result: "+str(cursor.fetchone())
+        #self.write('<h1>'+value+'</h1>')
+            self.finish()
 
 class MainHandler(tornado.web.RequestHandler):
 	def get(self):
@@ -33,9 +55,10 @@ class Query(tornado.web.RequestHandler):
         if path=='1':
             query = ChefQuery(h_name)
             c_prob, p_prob = yield query.do_everything()
-            self.render('ChefResult.html', 
-					p_prob=p_prob,
-					c_prob=c_prob )
+            self.render('ChefResult.html',
+                name = h_name,
+                p_prob=p_prob,
+                c_prob=c_prob )
         elif path=='2':
             query = ForcesQuery(h_name)
             prob = yield query.do_everything()
@@ -43,10 +66,13 @@ class Query(tornado.web.RequestHandler):
             p_prob = []
             for key in prob.keys():
                 if prob[key]["prac/cont"]=='CONTESTANT':
+                    if prob[key]['actual_points']==1.0:
+                        prob[key]['total_points']=1.0
                     c_prob.append(prob[key])
                 else:
                     p_prob.append(prob[key])
             self.render('ForcesResult.html',
+                name = h_name,
                 p_prob=p_prob,
                 c_prob=c_prob)
         else:
@@ -178,7 +204,7 @@ class ForcesQuery:
         print 'last done'
         return self.chall_prob
 
-    def contest_timing_(self):                                   #may be useful , but not used now.
+    def contest_timing_(self): #may be useful , but not used now.
         link_file = self.get_link_fileptr( self.all_contest_url )
         data = link_file.read()
         data = json.loads(data)
